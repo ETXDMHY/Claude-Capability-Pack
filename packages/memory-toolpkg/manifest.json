@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "toolpkg_id": "com.claude_capability_pack.memory",
+  "version": "0.1.36",
+  "main": "dist/main.js",
+  "display_name": {
+    "zh": "Claude 本地记忆层",
+    "en": "Claude Local Memory Layer"
+  },
+  "description": {
+    "zh": "从本地 Markdown buckets 读取 pinned 核心记忆和按需召回记忆，并临时注入本轮请求。",
+    "en": "Injects pinned core memory and relevant local Markdown memory into the current model request."
+  },
+  "enabled_by_default": true,
+  "subpackages": [
+    {
+      "id": "ccp_memory_admin",
+      "entry": "dist/packages/memory_admin.js",
+      "enabled_by_default": true,
+      "display_name": {
+        "zh": "Claude 记忆管理",
+        "en": "Claude Memory Admin"
+      },
+      "description": {
+        "zh": "手动新增、修改、钉选、取消钉选、归档和列出本地记忆。",
+        "en": "Manually add, update, pin, unpin, archive, and list local memory buckets."
+      }
+    }
+  ]
+}

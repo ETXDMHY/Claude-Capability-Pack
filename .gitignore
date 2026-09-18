@@ -1,0 +1,21 @@
+node_modules/
+dist/
+build/
+
+# Local research snapshots and generated/private migration data are not published.
+/research/
+/artifacts/
+/docs/
+/examples/
+/src/
+/packages/hook-probe/
+/manifest.json
+
+# Local environment and editor files.
+.env
+.env.*
+*.log
+.idea/
+.vscode/
+Thumbs.db
+.DS_Store
