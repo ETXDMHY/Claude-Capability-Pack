@@ -190,9 +190,13 @@ assert.equal(atomicCapture.success, true);
 assert.equal(atomicCapture.data.pendingAdded, 3);
 const atomicPending = await ccp_memory_list_candidates();
 assert.equal(atomicPending.data.count, 3);
-assert(atomicPending.data.items.every((item) => item.body.length <= 600));
+assert(atomicPending.data.items.every((item) => item.body.length <= 1600));
 assert(atomicPending.data.items.every((item) => item.body.includes("发生经过：")));
-assert(atomicPending.data.items.every((item) => !/#\d+|关系确认|回应/.test(item.body)));
+assert(atomicPending.data.items.every((item) => item.body.includes("背景主题：关系确认")));
+assert(atomicPending.data.items.every((item) => item.body.includes("关系承诺还在")));
+assert(atomicPending.data.items.every((item) => item.body.includes("保留不同意见")));
+assert(atomicPending.data.items.every((item) => item.body.includes("冷淡期")));
+assert(atomicPending.data.items.every((item) => !/#\d+/.test(item.body)));
 for (const item of atomicPending.data.items) {
   assert.equal((await ccp_memory_reject_candidate({ id: item.id })).success, true);
 }
@@ -211,6 +215,28 @@ const hookResult = await onPromptFinalize({
 assert.equal(typeof hookResult, "object");
 assert.match(hookResult.processedInput, /\[Core memory\]/);
 assert.equal("preparedHistory" in hookResult, false);
+
+const historicalAdd = await ccp_memory_add({
+  id: "historical-medication-id",
+  body: "过去某次对话中，Reiko提到前天调整过药物剂量。",
+  core_summary: "Reiko曾在过去的对话中提到调整药物剂量。",
+  tags: ["药物剂量", "historical"],
+});
+assert.equal(historicalAdd.success, true);
+const historicalHookResult = await onPromptFinalize({
+  eventName: "before_send_to_model",
+  eventPayload: {
+    stage: "before_send_to_model",
+    rawInput: "还记得药物剂量那件事吗？",
+    processedInput: "还记得药物剂量那件事吗？",
+    preparedHistory: [{ kind: "USER", content: "还记得药物剂量那件事吗？" }],
+    metadata: { activePrompt: { type: "character_card", id: "gabe-card", name: "Gabe" } },
+  },
+});
+assert.match(historicalHookResult.processedInput, /\[Temporary memory context\]/);
+assert.match(historicalHookResult.processedInput, /从过往对话或事件中检索出的历史记忆/);
+assert.match(historicalHookResult.processedInput, /不代表当前状态/);
+assert.match(historicalHookResult.processedInput, /\[过去的记忆\]/);
 const blockedHookResult = await onPromptFinalize({
   eventName: "before_send_to_model",
   eventPayload: {

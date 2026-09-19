@@ -130,6 +130,11 @@ assert.equal(buildQueries("今天吃了牛肉").length, 0);
 assert(pack.coreText.includes("[Core memory]"), pack.coreText);
 assert(pack.coreText.includes("Reiko prefers concise"), pack.coreText);
 assert(pack.retrievalText.includes("local Markdown buckets"), pack.retrievalText);
+assert(pack.retrievalText.includes("从过往对话或事件中检索出的历史记忆"), pack.retrievalText);
+assert(pack.retrievalText.includes("不代表当前状态"), pack.retrievalText);
+assert(pack.retrievalText.includes("不要把多条记忆强行合并为同一时间线"), pack.retrievalText);
+assert(pack.retrievalText.includes("以当前消息和明确日期为准"), pack.retrievalText);
+assert(pack.retrievalText.includes("- [过去的记忆]"), pack.retrievalText);
 assert(!pack.retrievalText.includes("beef"), pack.retrievalText);
 assert(pack.coreItems.length === 1, `coreItems=${pack.coreItems.length}`);
 assert(pack.retrievalItems.length === 1, `retrievalItems=${pack.retrievalItems.length}`);
@@ -252,11 +257,36 @@ assert(relationshipSummary.some((item) => item.memory.body.includes("关系承�
 assert(relationshipSummary.some((item) => item.memory.body.includes("保留不同意见")));
 assert(relationshipSummary.some((item) => item.memory.body.includes("等待并主动修复关系")));
 assert(relationshipSummary.every((item) => item.memory.body.includes("记忆结论：")));
+assert(relationshipSummary.every((item) => item.memory.body.includes("背景主题：关系确认")));
 assert(relationshipSummary.every((item) => item.memory.body.includes("发生经过：")));
-assert(relationshipSummary.every((item) => item.memory.body.length <= 600));
+assert(relationshipSummary.every((item) => item.memory.body.includes("关系承诺还在")));
+assert(relationshipSummary.every((item) => item.memory.body.includes("保留不同意见")));
+assert(relationshipSummary.every((item) => item.memory.body.includes("冷淡期")));
+assert(relationshipSummary.every((item) => item.memory.body.includes("后续意义：")));
+assert(relationshipSummary.every((item) => item.memory.body.length <= 1600));
 assert(relationshipSummary.every((item) => item.memory.body.length > String(item.memory.coreSummary || "").length));
-assert(relationshipSummary.every((item) => !/#\d+|关系确认|回应/.test(item.memory.body)));
+assert(relationshipSummary.every((item) => !/#\d+/.test(item.memory.body)));
 assert(relationshipSummary.every((item) => String(item.memory.title || "").length <= 42));
+
+const sectionContextSummary = extractMemoriesFromSummary(
+  `对话记忆：在七夕节当天，Reiko 与小克早上有过亲密互动，并认为这算是过节了。\n- 晚上 Reiko 在医院陪护时，小克表示陪她说话就是过节。\n- 这段互动被双方视为七夕当天的重要经历。`,
+  { sourceId: "qixi-summary" }
+);
+assert(sectionContextSummary.length >= 2, `sectionContextSummary=${sectionContextSummary.length}`);
+assert(sectionContextSummary.every((item) => item.memory.body.includes("七夕节当天")));
+assert(sectionContextSummary.every((item) => item.memory.body.includes("医院陪护")));
+assert(sectionContextSummary.every((item) => item.memory.body.includes("陪她说话就是过节")));
+
+const terseProjectSummary = extractMemoriesFromSummary(
+  `用户层面——Reiko希望先看完整演示。\n项目层面——等Reiko主动展示。\n后续计划——确认展示内容后再决定是否发布。`,
+  { sourceId: "terse-project-summary" }
+);
+const projectDisplayMemory = terseProjectSummary.find((item) => item.sourceLine.includes("主动展示"));
+assert(projectDisplayMemory, "terse project memory should be retained");
+assert.equal(projectDisplayMemory?.memory.type, "plans");
+assert(projectDisplayMemory?.memory.coreSummary?.startsWith("计划："));
+assert(projectDisplayMemory?.memory.body.includes("完整演示"));
+assert(projectDisplayMemory?.memory.body.includes("决定是否发布"));
 
 const edited = updateMemory(manual, {
   body: "Manual memories support edits, tags, importance, and summaries.",

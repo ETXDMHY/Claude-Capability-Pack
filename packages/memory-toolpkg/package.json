@@ -1,6 +1,6 @@
 {
   "name": "@claude-capability-pack/memory-toolpkg",
-  "version": "0.1.36",
+  "version": "0.1.38",
   "private": true,
   "scripts": {
     "build": "tsc && node scripts/copy-core.mjs",

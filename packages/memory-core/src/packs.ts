@@ -10,6 +10,9 @@ import {
   TokenBudgetSettings,
 } from "./types";
 
+const RETRIEVAL_CONTEXT_INSTRUCTION =
+  "以下条目是从过往对话或事件中检索出的历史记忆，可能来自不同日期或不同情境。它们只用于帮助理解背景，不代表当前状态。不要把多条记忆强行合并为同一时间线，也不要把曾经发生的事理解为正在发生；若与当前消息或明确日期冲突，以当前消息和明确日期为准。";
+
 export function buildMemoryPack(
   buckets: MemoryBucket[],
   queries: MemoryQuery[],
@@ -23,7 +26,7 @@ export function buildMemoryPack(
 
   return {
     coreText: formatPack("Core memory", coreItems),
-    retrievalText: formatPack("Temporary memory context", retrievalItems),
+    retrievalText: formatRetrievalPack(retrievalItems),
     coreItems,
     retrievalItems,
   };
@@ -216,6 +219,19 @@ function formatPack(title: string, items: RankedMemory[]): string {
   const lines = [`[${title}]`];
   for (const item of items) {
     lines.push(`- ${item.summary}`);
+  }
+  lines.push(`[End ${title}]`);
+  return lines.join("\n");
+}
+
+function formatRetrievalPack(items: RankedMemory[]): string {
+  if (!items.length) {
+    return "";
+  }
+  const title = "Temporary memory context";
+  const lines = [`[${title}]`, `[Memory usage instruction] ${RETRIEVAL_CONTEXT_INSTRUCTION}`];
+  for (const item of items) {
+    lines.push(`- [过去的记忆] ${item.summary}`);
   }
   lines.push(`[End ${title}]`);
   return lines.join("\n");

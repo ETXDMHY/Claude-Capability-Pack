@@ -150,7 +150,7 @@ export async function updateMemoryCandidate(
   candidate.memory = {
     ...candidate.memory,
     title: title.slice(0, 80),
-    body: body.slice(0, 1200),
+    body: body.slice(0, 2000),
     coreSummary: coreSummary.slice(0, 160),
     importance: Number.isFinite(parsedImportance)
       ? Math.max(1, Math.min(10, parsedImportance))

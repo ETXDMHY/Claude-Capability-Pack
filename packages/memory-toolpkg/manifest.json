@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "toolpkg_id": "com.claude_capability_pack.memory",
-  "version": "0.1.36",
+  "version": "0.1.38",
   "main": "dist/main.js",
   "display_name": {
     "zh": "Claude 本地记忆层",
