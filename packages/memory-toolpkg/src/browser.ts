@@ -39,6 +39,10 @@ export interface MemorySearchItem {
   pinned?: boolean;
   score: number;
   summary: string;
+  coreSummary?: string;
+  body: string;
+  createdAt?: string;
+  updatedAt?: string;
   filePath?: string;
 }
 
@@ -57,6 +61,13 @@ const { clampText, countTokenOverlap, firstUsefulLine, scoreBm25, tokenize } = r
   firstUsefulLine: (input: string) => string;
   scoreBm25: (documents: Array<{ id: string; text: string }>, query: string) => Map<string, number>;
   tokenize: (input: string) => string[];
+};
+
+const { archiveMemory, pinBucket, unpinBucket, updateMemory } = require("./memory-core/index") as {
+  archiveMemory: (bucket: MemoryBucketLike, now?: string) => MemoryBucketLike;
+  pinBucket: (bucket: MemoryBucketLike, options?: Record<string, unknown>) => MemoryBucketLike;
+  unpinBucket: (bucket: MemoryBucketLike) => MemoryBucketLike;
+  updateMemory: (bucket: MemoryBucketLike, input: Record<string, unknown>) => MemoryBucketLike;
 };
 
 export async function getMemoryLibraryStats(): Promise<MemoryLibraryStats> {
@@ -139,6 +150,61 @@ export async function searchMemoryLibrary(params: {
   };
 }
 
+export async function updateMemoryLibraryItem(params: {
+  id: string;
+  title?: string;
+  body?: string;
+  coreSummary?: string;
+  domain?: string[];
+  tags?: string[];
+  importance?: number;
+}): Promise<void> {
+  const id = textOf(params.id).trim();
+  if (!id) throw new Error("memory id is required");
+  const store = createLocalMemoryStore();
+  const loaded = await store.loadBuckets();
+  const bucket = (loaded.buckets as MemoryBucketLike[]).find((item) => item.id === id);
+  if (!bucket) throw new Error(`memory not found: ${id}`);
+  const updated = updateMemory(bucket, {
+    title: params.title == null ? undefined : textOf(params.title).trim(),
+    body: params.body == null ? undefined : textOf(params.body),
+    coreSummary: params.coreSummary == null ? undefined : textOf(params.coreSummary),
+    domain: params.domain,
+    tags: params.tags,
+    importance: params.importance,
+    now: new Date().toISOString(),
+  });
+  await store.writeBucket(updated);
+}
+
+export async function archiveMemoryLibraryItem(idValue: string): Promise<void> {
+  const id = textOf(idValue).trim();
+  if (!id) throw new Error("memory id is required");
+  const store = createLocalMemoryStore();
+  const loaded = await store.loadBuckets();
+  const bucket = (loaded.buckets as MemoryBucketLike[]).find((item) => item.id === id);
+  if (!bucket) throw new Error(`memory not found: ${id}`);
+  await store.writeBucket(archiveMemory(bucket, new Date().toISOString()));
+}
+
+export async function setMemoryLibraryItemPinned(idValue: string, pinned: boolean): Promise<void> {
+  const id = textOf(idValue).trim();
+  if (!id) throw new Error("memory id is required");
+  const store = createLocalMemoryStore();
+  const loaded = await store.loadBuckets();
+  const bucket = (loaded.buckets as MemoryBucketLike[]).find((item) => item.id === id);
+  if (!bucket) throw new Error(`memory not found: ${id}`);
+  if (bucket.type === "archive") throw new Error("archived memory cannot be pinned");
+  const updated = pinned
+    ? pinBucket(bucket, {
+        scope: "global",
+        order: 1000,
+        coreSummary: bucket.coreSummary || firstUsefulLine(bucket.body || ""),
+      })
+    : unpinBucket(bucket);
+  await store.writeBucket(updated);
+}
+
 export function formatMemoryLibraryStats(stats: MemoryLibraryStats): string {
   return [
     `总数: ${stats.total}`,
@@ -206,6 +272,10 @@ function scoreBucket(bucket: MemoryBucketLike, query: string, queryTokens: strin
     pinned: bucket.pinned,
     score,
     summary: clampText(bucket.coreSummary || firstUsefulLine(bucket.body || ""), 160),
+    coreSummary: bucket.coreSummary,
+    body: bucket.body || "",
+    createdAt: bucket.createdAt,
+    updatedAt: bucket.updatedAt,
     filePath: bucket.filePath,
   };
 }

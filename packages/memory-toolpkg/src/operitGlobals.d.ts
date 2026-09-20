@@ -8,4 +8,5 @@ declare namespace ToolPkg {
   type PromptHookObjectResult = any;
   type SummaryGenerateHookEvent = any;
   type SummaryHookObjectResult = any;
+  type MessageProcessingHookEvent = any;
 }

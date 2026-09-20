@@ -1,6 +1,7 @@
 export interface MemoryRuntimeSettings {
   enabled: boolean;
   summaryCaptureEnabled: boolean;
+  smartSummaryCaptureEnabled: boolean;
   pinCapturedCore: boolean;
   requireCharacterMatch: boolean;
   enabledCharacterIds: string[];
@@ -17,6 +18,7 @@ export interface MemoryRuntimeSettings {
 export const DEFAULT_MEMORY_SETTINGS: MemoryRuntimeSettings = {
   enabled: true,
   summaryCaptureEnabled: false,
+  smartSummaryCaptureEnabled: false,
   pinCapturedCore: false,
   requireCharacterMatch: false,
   enabledCharacterIds: [],
@@ -41,6 +43,10 @@ export function normalizeMemorySettings(input: Partial<MemoryRuntimeSettings> = 
       typeof input.summaryCaptureEnabled === "boolean"
         ? input.summaryCaptureEnabled
         : DEFAULT_MEMORY_SETTINGS.summaryCaptureEnabled,
+    smartSummaryCaptureEnabled:
+      typeof input.smartSummaryCaptureEnabled === "boolean"
+        ? input.smartSummaryCaptureEnabled
+        : DEFAULT_MEMORY_SETTINGS.smartSummaryCaptureEnabled,
     pinCapturedCore:
       typeof input.pinCapturedCore === "boolean" ? input.pinCapturedCore : DEFAULT_MEMORY_SETTINGS.pinCapturedCore,
     requireCharacterMatch:

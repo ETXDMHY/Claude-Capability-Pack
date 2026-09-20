@@ -81,6 +81,7 @@ const {
 
 const HOOK_ID = "ccp_memory_finalize";
 const SUMMARY_HOOK_ID = "ccp_memory_summary_capture";
+const MESSAGE_PROCESSING_ID = "ccp_memory_smart_capture";
 const TARGET_STAGE = "before_send_to_model";
 const SUMMARY_CAPTURE_STAGE = "after_generate_summary";
 
@@ -522,8 +523,23 @@ export function registerToolPkg(): boolean {
     function: onSummaryGenerate,
   });
 
-  logInfo("registered", `hook_id=${HOOK_ID} summary_hook_id=${SUMMARY_HOOK_ID}`);
+  ToolPkg.registerMessageProcessingPlugin({
+    id: MESSAGE_PROCESSING_ID,
+    function: onMessageProcessing,
+  });
+
+  logInfo(
+    "registered",
+    `hook_id=${HOOK_ID} summary_hook_id=${SUMMARY_HOOK_ID} message_processing_id=${MESSAGE_PROCESSING_ID}`
+  );
   return true;
+}
+
+export async function onMessageProcessing(
+  event: ToolPkg.MessageProcessingHookEvent
+): Promise<{ matched: false }> {
+  void event;
+  return { matched: false };
 }
 
 export async function onSummaryGenerate(
@@ -543,23 +559,30 @@ export async function onSummaryGenerate(
   }
 
   const activePrompt = payload.metadata?.activePrompt;
+  const settings = await loadMemorySettings();
+  if (!settings.summaryCaptureEnabled) {
+    logInfo("summary_capture_skipped", `reason=disabled stage=${stage}`);
+    return null;
+  }
+  const sourceId = makeMemoryId(summary, textOf(payload.stage || "summary"));
   const result = await ccp_memory_ingest_summary({
     summary,
-    source_id: makeMemoryId(summary, textOf(payload.stage || "summary")),
+    source_id: sourceId,
     character_id: activePrompt?.id,
     chat_id: textOf((payload as unknown as { chatId?: unknown }).chatId || ""),
   });
-  const data = (result.data || {}) as Record<string, unknown>;
+  const data = ((result as { data?: unknown }).data || result || {}) as Record<string, unknown>;
   logInfo(
     "summary_capture_completed",
     [
       `stage=${stage}`,
-      `success=${Boolean(result.success)}`,
+      "mode=rules_to_candidates",
+      `success=${"success" in result ? Boolean(result.success) : true}`,
       `candidates=${textOf(data.candidates || 0)}`,
       `pending_added=${textOf(data.pendingAdded || 0)}`,
       `skipped=${textOf(data.skipped || 0)}`,
       `elapsed_ms=${Date.now() - startedAt}`,
-      result.success ? "" : `error=${formatLogText(textOf(result.error))}`,
+      "success" in result && !result.success ? `error=${formatLogText(textOf(result.error))}` : "",
     ].filter(Boolean).join(" ")
   );
   return null;
@@ -678,6 +701,8 @@ async function captureSummaryTurns(
   activePrompt?: ActivePromptSnapshotLike,
   chatId?: string
 ): Promise<void> {
+  const settings = await loadMemorySettings();
+  if (!settings.summaryCaptureEnabled) return;
   const summaryTurns = turns
     .filter((turn) => textOf(turn.kind).toUpperCase() === "SUMMARY")
     .map((turn) => textOf(turn.content).trim())
