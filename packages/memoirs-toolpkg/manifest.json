@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "api_version": "1.0.1",
+  "toolpkg_id": "com.volumeofmemoirs.operit",
+  "version": "0.5.0",
+  "main": "dist/main.js",
+  "display_name": {
+    "zh": "记忆之书",
+    "en": "Volume of Memoirs"
+  },
+  "description": {
+    "zh": "从 Claude 本地记忆层只读生成每日书册，让用户与当前聊天角色盲选并共同翻阅旧记忆。",
+    "en": "Builds a read-only daily volume from Claude Local Memory for blind page selection and shared rereading."
+  },
+  "enabled_by_default": true,
+  "subpackages": [
+    {
+      "id": "memoirs_automation",
+      "entry": "dist/packages/memoirs_automation.js",
+      "enabled_by_default": true,
+      "display_name": {
+        "zh": "记忆之书自动邀请",
+        "en": "Volume of Memoirs Automation"
+      },
+      "description": {
+        "zh": "供 Operit 工作流低频判断邀请时机，只写入待同步事件，不直接发送消息。",
+        "en": "Lets an Operit workflow arm an invitation event without sending chat messages directly."
+      }
+    }
+  ]
+}

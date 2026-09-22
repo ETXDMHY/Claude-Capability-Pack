@@ -1,0 +1,14 @@
+{
+  "name": "@claude-capability-pack/memoirs-toolpkg",
+  "version": "0.5.0",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "package": "npm run build && node scripts/pack-toolpkg.mjs",
+    "test": "npm run build && node scripts/test-runtime.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0"
+  }
+}
